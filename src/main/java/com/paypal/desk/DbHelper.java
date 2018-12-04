@@ -31,13 +31,14 @@ public class DbHelper {
         String sql = "insert into users " +
                 "(first_name, last_name)" +
                 " values (" +
-                "'" + firstName + "'" +
+                "?" +
                 ", " +
-                "'" + lastName + "'" +
+                "?" +
                 ")";
 
         try {
-            executeStatement(sql);
+
+            executeStatement(sql,firstName,lastName);
 
             String idSql = "select max(id) from users";
             ResultSet resultSet = executeQuery(idSql);
@@ -65,6 +66,7 @@ public class DbHelper {
         try{
             currentCash = getUserCash(userId);
         }catch (SQLException e){
+            e.printStackTrace();
             System.out.println("Wrong user id");
             return;
         }
@@ -84,27 +86,37 @@ public class DbHelper {
         System.out.println("Cash in successful");
     }
 
-    private static void executeStatement(String statement) throws SQLException{
-        Statement executor = connection.createStatement();
+    private static void executeStatement(String statement,Object... arr) throws SQLException{
+        PreparedStatement preparedStatement = connection.prepareStatement(statement);
 
-        executor.execute(statement);
+        for(int i=0;i<arr.length;++i){
+            preparedStatement.setObject(i + 1,arr[i]);
+        }
+
+        preparedStatement.execute();
     }
 
-    private static ResultSet executeQuery(String query) throws SQLException{
-        Statement executor = connection.createStatement();
+    private static ResultSet executeQuery(String query,Object... arr) throws SQLException{
 
-       return  executor.executeQuery(query);
+        PreparedStatement executor = connection.prepareStatement(query);
+
+        for(int i=0;i<arr.length;++i){
+            executor.setObject(i+1,arr[i]);
+        }
+
+
+       return  executor.executeQuery();
 
     }
 
     private static Double getUserCash(int id) throws SQLException {
-        String getCash = "SELECT balance FROM users WHERE id=" + id;
+        String getCash = "SELECT balance FROM users WHERE id = " + "?";
 
         ResultSet resultSet = null;
 
-        resultSet = executeQuery(getCash);
+        resultSet = executeQuery(getCash,id);
         resultSet.next();
-        return resultSet.getDouble(1);
+        return resultSet.getDouble("balance");
 
     }
 
